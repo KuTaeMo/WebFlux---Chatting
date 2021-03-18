@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+    <style>
+        .container {
+            width: 80%;
+            margin: 0 auto;
+            border: 1px black solid;
+        }
+    </style>
+</head>
+
+<body>
+    <div>
+        <textarea id="chatarea" style="width: 600px; height: 200px;">
+
+        </textarea>
+    </div>
+
+    <div style="width: 600px;">
+        <input id="username" placeholder="이름을 입력하세요" style="width: 25%;" value="익명1" />
+        <input type="hidden" id="rusername" />
+        <input id="chat" placeholder="채팅을 입력하세요" style="width: 60%;">
+        <input type="hidden" id="rchat" />
+        <button id="btn-chat">전송</button>
+    </div>
+
+    <script>
+
+
+        fetch("http://localhost:8080/")
+            .then(res => res.json()).then(res => {
+                console.log(res);
+
+                const eventSource = new EventSource("http://localhost:8080/sse");
+                eventSource.onmessage = event => {
+
+                    console.log(event.data);
+
+                    let chatarea = document.getElementById(`chatarea`);
+                    chatarea.value += event.data + '\n';
+                };
+                eventSource.onerror = error => {
+                    eventSource.close();
+                };
+            });
+
+        $("#btn-chat").on("click", (e) => {
+            let username = document.getElementById(`username`).value;
+            let chat = document.getElementById(`chat`).value;
+            let data = {
+                "username": username,
+                "chat": chat
+            }
+            $.ajax({
+                type: "POST",
+                url: "http://localhost:8080/send",
+                data: JSON.stringify(data),
+                contentType: "application/json; charset=utf-8",
+                dataType: "json"
+            }).done((res) => {
+                let username = document.getElementById(`username`).value;
+                let chat = document.getElementById(`chat`).value;
+                let chatarea = document.getElementById(`chatarea`);
+                console.log("useraname : " + username + " chat : " + chat);
+                let adt = eval(`username`) + ` : ` + eval(`chat`) + '\n';
+                chatarea.value += adt;
+            });
+            chat.value = "";
+        });
+    </script>
+</body>
+
+</html>
